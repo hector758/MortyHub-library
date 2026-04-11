@@ -1,0 +1,244 @@
+-- MortyHub UI Library
+-- Inspirada en WindUI
+-- Creada por Manus para el usuario
+
+local MortyHub = {}
+MortyHub.__index = MortyHub
+
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+function MortyHub:CreateWindow(config)
+    local Window = {
+        Title = config.Title or "MortyHub",
+        Icon = "rbxassetid://17546862323", -- ID de Morty
+        Tabs = {},
+        CurrentTab = nil
+    }
+    
+    -- Crear ScreenGui
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "MortyHub"
+    ScreenGui.Parent = CoreGui
+    ScreenGui.ResetOnSpawn = false
+    
+    -- Main Frame
+    local Main = Instance.new("Frame")
+    Main.Name = "Main"
+    Main.Size = UDim2.new(0, 550, 0, 350)
+    Main.Position = UDim2.new(0.5, -275, 0.5, -175)
+    Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Main.BorderSizePixel = 0
+    Main.ClipsDescendants = true
+    Main.Parent = ScreenGui
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.Parent = Main
+    
+    -- Top Bar
+    local TopBar = Instance.new("Frame")
+    TopBar.Name = "TopBar"
+    TopBar.Size = UDim2.new(1, 0, 0, 40)
+    TopBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    TopBar.BorderSizePixel = 0
+    TopBar.Parent = Main
+    
+    local TopCorner = Instance.new("UICorner")
+    TopCorner.CornerRadius = UDim.new(0, 10)
+    TopCorner.Parent = TopBar
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Size = UDim2.new(1, -80, 1, 0)
+    TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Text = Window.Title
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.Font = Enum.Font.GothamBold
+    TitleLabel.TextSize = 16
+    TitleLabel.Parent = TopBar
+    
+    -- Morty Icon (Minimize/Maximize)
+    local MortyButton = Instance.new("ImageButton")
+    MortyButton.Name = "MortyButton"
+    MortyButton.Size = UDim2.new(0, 30, 0, 30)
+    MortyButton.Position = UDim2.new(1, -35, 0, 5)
+    MortyButton.BackgroundTransparency = 1
+    MortyButton.Image = Window.Icon
+    MortyButton.Parent = TopBar
+    
+    -- Sidebar
+    local Sidebar = Instance.new("ScrollingFrame")
+    Sidebar.Name = "Sidebar"
+    Sidebar.Size = UDim2.new(0, 150, 1, -40)
+    Sidebar.Position = UDim2.new(0, 0, 0, 40)
+    Sidebar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Sidebar.BorderSizePixel = 0
+    Sidebar.ScrollBarThickness = 2
+    Sidebar.Parent = Main
+    
+    local SideLayout = Instance.new("UIListLayout")
+    SideLayout.Padding = UDim.new(0, 5)
+    SideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    SideLayout.Parent = Sidebar
+    
+    local SidePadding = Instance.new("UIPadding")
+    SidePadding.PaddingTop = UDim.new(0, 10)
+    SidePadding.Parent = Sidebar
+    
+    -- Content Area
+    local Content = Instance.new("Frame")
+    Content.Name = "Content"
+    Content.Size = UDim2.new(1, -150, 1, -40)
+    Content.Position = UDim2.new(0, 150, 0, 40)
+    Content.BackgroundTransparency = 1
+    Content.Parent = Main
+    
+    -- Funcionalidad de Arrastre
+    local dragging, dragInput, dragStart, startPos
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = Main.Position
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    -- Minimizar / Maximizar
+    local minimized = false
+    MortyButton.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        if minimized then
+            TweenService:Create(Main, TweenInfo.new(0.3), {Size = UDim2.new(0, 550, 0, 40)}):Play()
+        else
+            TweenService:Create(Main, TweenInfo.new(0.3), {Size = UDim2.new(0, 550, 0, 350)}):Play()
+        end
+    end)
+    
+    function Window:CreateTab(name)
+        local Tab = {
+            Name = name,
+            Container = Instance.new("ScrollingFrame")
+        }
+        
+        Tab.Container.Name = name .. "Tab"
+        Tab.Container.Size = UDim2.new(1, 0, 1, 0)
+        Tab.Container.BackgroundTransparency = 1
+        Tab.Container.BorderSizePixel = 0
+        Tab.Container.ScrollBarThickness = 4
+        Tab.Container.Visible = false
+        Tab.Container.Parent = Content
+        
+        local TabPadding = Instance.new("UIPadding")
+        TabPadding.PaddingLeft = UDim.new(0, 10)
+        TabPadding.PaddingRight = UDim.new(0, 10)
+        TabPadding.PaddingTop = UDim.new(0, 10)
+        TabPadding.Parent = Tab.Container
+        
+        local TabLayout = Instance.new("UIListLayout")
+        TabLayout.Padding = UDim.new(0, 8)
+        TabLayout.Parent = Tab.Container
+        
+        -- Botón de Tab en Sidebar
+        local TabButton = Instance.new("TextButton")
+        TabButton.Size = UDim2.new(0.9, 0, 0, 35)
+        TabButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        TabButton.Text = name
+        TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+        TabButton.Font = Enum.Font.Gotham
+        TabButton.TextSize = 14
+        TabButton.Parent = Sidebar
+        
+        local TabCorner = Instance.new("UICorner")
+        TabCorner.CornerRadius = UDim.new(0, 6)
+        TabCorner.Parent = TabButton
+        
+        TabButton.MouseButton1Click:Connect(function()
+            for _, t in pairs(Window.Tabs) do
+                t.Container.Visible = false
+            end
+            Tab.Container.Visible = true
+            Window.CurrentTab = Tab
+        end)
+        
+        if not Window.CurrentTab then
+            Tab.Container.Visible = true
+            Window.CurrentTab = Tab
+        end
+        
+        table.insert(Window.Tabs, Tab)
+        
+        -- Elementos del Tab
+        function Tab:AddButton(text, callback)
+            local Button = Instance.new("TextButton")
+            Button.Size = UDim2.new(1, 0, 0, 40)
+            Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            Button.Text = "  " .. text
+            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Button.TextXAlignment = Enum.TextXAlignment.Left
+            Button.Font = Enum.Font.Gotham
+            Button.TextSize = 14
+            Button.Parent = Tab.Container
+            
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 6)
+            Corner.Parent = Button
+            
+            Button.MouseButton1Click:Connect(callback)
+        end
+        
+        function Tab:AddToggle(text, default, callback)
+            local Toggle = Instance.new("TextButton")
+            Toggle.Size = UDim2.new(1, 0, 0, 40)
+            Toggle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            Toggle.Text = "  " .. text
+            Toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Toggle.TextXAlignment = Enum.TextXAlignment.Left
+            Toggle.Font = Enum.Font.Gotham
+            Toggle.TextSize = 14
+            Toggle.Parent = Tab.Container
+            
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 6)
+            Corner.Parent = Toggle
+            
+            local Status = Instance.new("Frame")
+            Status.Size = UDim2.new(0, 20, 0, 20)
+            Status.Position = UDim2.new(1, -30, 0.5, -10)
+            Status.BackgroundColor3 = default and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+            Status.Parent = Toggle
+            
+            local StatusCorner = Instance.new("UICorner")
+            StatusCorner.CornerRadius = UDim.new(1, 0)
+            StatusCorner.Parent = Status
+            
+            local state = default
+            Toggle.MouseButton1Click:Connect(function()
+                state = not state
+                Status.BackgroundColor3 = state and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                callback(state)
+            end)
+        end
+        
+        return Tab
+    end
+    
+    return Window
+end
+
+return MortyHub
